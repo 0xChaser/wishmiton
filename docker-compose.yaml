@@ -28,7 +28,7 @@ services:
     ports:
       - "8080:80"
     depends_on:
-      - mariadb
+      - mariadb 
     restart: always
     networks:
       - "mariadb_network"
