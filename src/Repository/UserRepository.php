@@ -21,9 +21,9 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      */
     public function findAllWithDetails(): array
     {
-        return $this->createQueryBuilder('u')
-            ->select('u')
-            ->orderBy('u.id', 'ASC')
+        return $this->createQueryBuilder('user')
+            ->select('user')
+            ->orderBy('user.id', 'ASC')
             ->getQuery()
             ->getResult();
     }
@@ -34,8 +34,8 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      */
     public function findOneById(int $id): ?User
     {
-        return $this->createQueryBuilder('u')
-            ->andWhere('u.id = :id')
+        return $this->createQueryBuilder('user')
+            ->andWhere('user.id = :id')
             ->setParameter('id', $id)
             ->getQuery()
             ->getOneOrNullResult();
@@ -47,7 +47,7 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
      */
     public function findOneByPseudo(string $pseudo): ?User
     {
-        return $this->createQueryBuilder('u')
+        return $this->createQueryBuilder('user')
             ->andWhere('u.pseudo = :pseudo')
             ->setParameter('pseudo', $pseudo)
             ->getQuery()
