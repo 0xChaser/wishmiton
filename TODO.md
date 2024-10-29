@@ -48,10 +48,10 @@
 
 ## Back Adam
 
-- [ ] Endpoint Recipe
-- [ ] GET / GET by ID
-- [ ] POST
-- [ ] DELETE ALL / DELETE by ID
-- [ ] PATCH by id
-- [ ] Utilisation d'ORM (Object Relational Mapping) -> https://symfony.com/doc/current/doctrine.html
-- [ ] Swagger
+- [x] Endpoint Recipe
+- [x] GET / GET by ID
+- [x] POST
+- [x] DELETE ALL / DELETE by ID
+- [x] PATCH by id
+- [x] Utilisation d'ORM (Object Relational Mapping) -> https://symfony.com/doc/current/doctrine.html
+- [x] Swagger
