@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  mariadb:
+    container_name: "mariadb_service"
+    image: mariadb:latest
+    restart: always
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE}"
+      MYSQL_USER: "${MYSQL_USER}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+    env_file:
+      - .env
+    networks:
+      - "mariadb_network"
+
+  phpmyadmin:
+    container_name: "phpmyadmin_service"
+    image: phpmyadmin/phpmyadmin:latest
+    environment:
+      PMA_HOST: mariadb
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
+    ports:
+      - "8080:80"
+    depends_on:
+      - mariadb 
+    restart: always
+    networks:
+      - "mariadb_network"
+
+volumes:
+  mariadb_data:
+
+networks:
+  mariadb_network:
+    driver: bridge
