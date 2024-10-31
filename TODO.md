@@ -33,7 +33,7 @@
 - [x] Utilisation d'ORM (Object Relational Mapping) -> https://symfony.com/doc/current/doctrine.html
 - [x] Docker Compose / DockerFile
 - [x] Swagger
-- [ ] Endpoint Authent : JWT / Permissions / Refresh Token
+- [x] Endpoint Authent
 
 ## Back Manue
 

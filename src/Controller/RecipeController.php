@@ -241,7 +241,6 @@ class RecipeController extends AbstractController {
         }
     }
 
-
     #[Route('/{id}', methods: ['PATCH'])]
     #[OA\Parameter(
         name: 'id',

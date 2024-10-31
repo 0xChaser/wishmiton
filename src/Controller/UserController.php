@@ -76,7 +76,7 @@ class UserController extends AbstractController
                     'recipeIds' => $user->getRecipeIds() ?? [],
                     'commentIds' => $user->getCommentIds() ?? []
                 ];
-            }
+            } 
 
             return new JsonResponse([
                 'success' => true,

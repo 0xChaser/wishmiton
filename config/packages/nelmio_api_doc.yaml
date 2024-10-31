@@ -1,8 +1,8 @@
 nelmio_api_doc:
     documentation:
         info:
-            title: My API
-            description: This is an awesome API!
+            title: WishMiton
+            description: This is like marmiton but on Wish and it's only the API ! 
             version: 1.0.0
         components:
             securitySchemes:
