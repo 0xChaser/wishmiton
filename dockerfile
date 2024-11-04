@@ -27,6 +27,13 @@ RUN php -r "if (hash_file('sha384', 'composer-setup.php') === 'dac665fdc30fdd8ec
 RUN php composer-setup.php --install-dir=/bin --filename=composer
 RUN php -r "unlink('composer-setup.php');"
 
+RUN apk add --no-cache \
+    mysql-client \
+    mysql-dev \
+    linux-headers
+    
+RUN docker-php-ext-install -j$(nproc) pdo_mysql
+
 USER www-data
 
 RUN rm composer.lock
