@@ -3,7 +3,7 @@ services:
     container_name: wishmiton
     build:
       context: .
-      target: development
+      target: base
       dockerfile: Dockerfile
     ports:
       - 80:8000
@@ -14,8 +14,14 @@ services:
       APP_ENV: dev
       MYSQL_HOST: "${MYSQL_HOST}"
       DATABASE_URL: "${DATABASE_URL}"
+      MYSQL_PORT: "${MYSQL_PORT}"
+      MYSQL_USER: "${MYSQL_USER}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
     depends_on:
       - mariadb
+    env_file:
+      - path: .env
+        required: true
     networks:
       - "app_network"
 

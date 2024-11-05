@@ -27,17 +27,28 @@ RUN php -r "if (hash_file('sha384', 'composer-setup.php') === 'dac665fdc30fdd8ec
 RUN php composer-setup.php --install-dir=/bin --filename=composer
 RUN php -r "unlink('composer-setup.php');"
 
-RUN apk add --no-cache \
+RUN apk add \
     mysql-client \
     mysql-dev \
-    linux-headers
-    
-RUN docker-php-ext-install -j$(nproc) pdo_mysql
+    linux-headers \
+    icu-dev \
+    libxml2-dev
+
+RUN docker-php-ext-install mysqli pdo pdo_mysql
+RUN docker-php-ext-enable mysqli pdo pdo_mysql
+
+
+RUN composer require doctrine/doctrine-migrations-bundle "^3.0"
+RUN composer require doctrine/orm doctrine/doctrine-migrations-bundle
+RUN composer require symfony/maker-bundle --dev
+RUN composer update
+RUN composer install
+
+RUN php bin/console make:migration -vvv
+# RUN php bin/console doctrine:migrations:migrate --no-interaction -vvv
+
 
 USER www-data
-
-RUN rm composer.lock
-RUN composer install
 
 FROM base AS development
 
