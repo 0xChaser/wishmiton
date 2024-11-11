@@ -20,13 +20,9 @@ class Comment
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $content = null;
 
-    // constructeur
-    // public function __construct(?int $id, ?string $title, ?string $content)
-    // {
-    //     $this->id = $id;
-    //     $this->title = $title;
-    //     $this->content = $content;
-    // }
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'comments')]
+    #[ORM\JoinColumn(nullable: false)]
+    private User $author;
 
     // Getters et setters
 
@@ -63,6 +59,17 @@ class Comment
     {
         $this->content = $content;
 
+        return $this;
+    }
+
+    public function getAuthor(): ?User
+    {
+        return $this->author;
+    }
+
+    public function setAuthor(User $author): self
+    {
+        $this->author = $author;
         return $this;
     }
 }

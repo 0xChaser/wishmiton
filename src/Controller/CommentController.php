@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\AuthToken;
 use App\Entity\Comment;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -18,71 +19,71 @@ class CommentController extends AbstractController
 {
     private EntityManagerInterface $entityManager;
 
-    public function __construct(EntityManagerInterface $entityManager) {
+    public function __construct(EntityManagerInterface $entityManager)
+    {
         $this->entityManager = $entityManager;
     }
 
-        // GET ALL COMMENTS
-        #[Route('', methods: ['GET'])]
-        #[OA\Response(
-            response: 200,
-            description: 'Returns the list of comments',
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'success', type: 'boolean'),
-                    new OA\Property(property: 'count', type: 'integer'),
-                    new OA\Property(
-                        property: 'data',
-                        type: 'array',
-                        items: new OA\Items(
-                            properties: [
-                                new OA\Property(property: 'id', type: 'integer'),
-                                new OA\Property(property: 'title', type: 'string'),
-                                new OA\Property(property: 'content', type: 'string'),
-                            ]
-                        )
+    // GET ALL COMMENTS
+    #[Route('', methods: ['GET'])]
+    #[OA\Response(
+        response: 200,
+        description: 'Returns the list of comments',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean'),
+                new OA\Property(property: 'count', type: 'integer'),
+                new OA\Property(
+                    property: 'data',
+                    type: 'array',
+                    items: new OA\Items(
+                        properties: [
+                            new OA\Property(property: 'id', type: 'integer'),
+                            new OA\Property(property: 'title', type: 'string'),
+                            new OA\Property(property: 'content', type: 'string'),
+                        ]
                     )
-                ]
-            )
-        )]
-        #[OA\Response(
-            response: 500,
-            description: 'Internal server error',
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'success', type: 'boolean', example: false),
-                    new OA\Property(property: 'message', type: 'string')
-                ]
-            )
-        )]
-        public function getAllComments(): JsonResponse
-        {
-            try {
-                $comments = $this->entityManager->getRepository(Comment::class)->findAll();
-    
-                $data = array_map(function (Comment $category) {
-                    return [
-                        'id' => $category->getId(),
-                        'title' => $category->getTitle(),
-                        'content' => $category->getContent(),
-                    ];
-                }, $comments);
-    
-                return new JsonResponse([
-                    'success' => true,
-                    'count' => count($data),
-                    'data' => $data
-                ], Response::HTTP_OK);
-    
-            } catch (\Exception $e) {
-                return new JsonResponse([
-                    'success' => false,
-                    'message' => 'Error retrieving comments: ' . $e->getMessage()
-                ], Response::HTTP_INTERNAL_SERVER_ERROR);
-            }
-        }
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 500,
+        description: 'Internal server error',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'success', type: 'boolean', example: false),
+                new OA\Property(property: 'message', type: 'string')
+            ]
+        )
+    )]
+    public function getAllComments(): JsonResponse
+    {
+        try {
+            $comments = $this->entityManager->getRepository(Comment::class)->findAll();
 
-    
+            $data = array_map(function (Comment $category) {
+                return [
+                    'id' => $category->getId(),
+                    'title' => $category->getTitle(),
+                    'content' => $category->getContent(),
+                ];
+            }, $comments);
+
+            return new JsonResponse([
+                'success' => true,
+                'count' => count($data),
+                'data' => $data
+            ], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Error retrieving comments: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
     // GET ONE COMMENT
     #[Route('/{id}', methods: ['GET'])]
     #[OA\Parameter(
@@ -101,7 +102,7 @@ class CommentController extends AbstractController
                 new OA\Property(property: 'title', type: 'string'),
                 new OA\Property(property: 'content', type: 'string'),
             ]
-        )   
+        )
     )]
     #[OA\Response(
         response: 404,
@@ -182,7 +183,18 @@ class CommentController extends AbstractController
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'message', type: 'string')
-            ]
+            ],
+            type: 'object'
+        )
+    )]
+    #[OA\Response(
+        response: 401,
+        description: 'Unauthorized',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ],
+            type: 'object'
         )
     )]
     public function createComment(Request $request): JsonResponse
@@ -190,10 +202,13 @@ class CommentController extends AbstractController
         try {
 
             $data = json_decode($request->getContent(), true);
+            $result = $this->entityManager->getRepository(AuthToken::class)->verifyToken($request);
+            $user = $result['user'];
 
             $comment = new Comment();
             $comment->setTitle($data['title']);
             $comment->setContent($data['content']);
+            $comment->setAuthor($user);
 
             $this->entityManager->persist($comment);
             $this->entityManager->flush();
@@ -205,9 +220,8 @@ class CommentController extends AbstractController
                     'title' => $comment->getTitle(),
                     'content' => $comment->getContent()
                 ]
-                ], Response::HTTP_CREATED);
-        }
-        catch(\Exception $e) {
+            ], Response::HTTP_CREATED);
+        } catch (\Exception $e) {
             return $this->json([
                 'message' => 'Error creating comment: ' . $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -237,12 +251,15 @@ class CommentController extends AbstractController
         content: new OA\JsonContent(
             properties: [
                 new OA\Property(property: 'message', type: 'string'),
-                new OA\Property(property: 'data', type: 'object', 
-                properties: [
-                    new OA\Property(property: 'id', type: 'integer'),
-                    new OA\Property(property: 'title', type: 'string'),
-                    new OA\Property(property: 'content', type: 'text')
-                ])
+                new OA\Property(
+                    property: 'data',
+                    type: 'object',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer'),
+                        new OA\Property(property: 'title', type: 'string'),
+                        new OA\Property(property: 'content', type: 'text')
+                    ]
+                )
             ],
             type: 'object'
         )
@@ -256,37 +273,54 @@ class CommentController extends AbstractController
             ]
         )
     )]
+    #[OA\Response(
+        response: 401,
+        description: 'Unauthorized',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ],
+            type: 'object'
+        )
+    )]
     public function updateComment(Request $request, int $id): JsonResponse
     {
         try {
             $comment = $this->entityManager->getRepository(Comment::class)->find($id);
+            $result = $this->entityManager->getRepository(AuthToken::class)->verifyToken($request);
+            $user = $result['user'];
 
-            if(!$comment) {
-                return $this->json(['message' => 'Comment not found'],
-                Response::HTTP_NOT_FOUND);
+            if (!$comment) {
+                return $this->json(
+                    ['message' => 'Comment not found'],
+                    Response::HTTP_NOT_FOUND
+                );
             }
 
-            $data = json_decode($request->getContent(), true);
+            if ($comment->getAuthor() == $user) {
+                $data = json_decode($request->getContent(), true);
 
-            if (isset($data['title'])) {
-                $comment->setTitle($data['title']);
+                if (isset($data['title'])) {
+                    $comment->setTitle($data['title']);
+                }
+                if (isset($data['content'])) {
+                    $comment->setContent($data['content']);
+                }
+
+                $this->entityManager->flush();
+
+                return $this->json([
+                    'message' => 'Comment successfully updated',
+                    'data' => [
+                        'id' => $comment->getId(),
+                        'title' => $comment->getTitle(),
+                        'content' => $comment->getContent(),
+                    ]
+                ]);
+            } else {
+                return $this->json(['message' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
             }
-            if (isset($data['content'])) {
-                $comment->setContent($data['content']);
-            }
-
-            $this->entityManager->flush();
-
-            return $this->json([
-                'message' => 'Comment successfully updated',
-                'data' => [
-                    'id' => $comment->getId(),
-                    'title' => $comment->getTitle(),
-                    'content' => $comment->getContent(),
-                ]
-            ]);
-        }
-        catch (\Exception $e){
+        } catch (\Exception $e) {
             return $this->json([
                 'message' => 'Error updating recipe: ' . $e->getMessage()
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -320,20 +354,34 @@ class CommentController extends AbstractController
             ]
         )
     )]
-    public function deleteComment(int $id): JsonResponse
+    #[OA\Response(
+        response: 401,
+        description: 'Unauthorized',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ],
+            type: 'object'
+        )
+    )]
+    public function deleteComment(int $id, Request $request): JsonResponse
     {
         try {
             $comment = $this->entityManager->getRepository(Comment::class)->find($id);
+            $result = $this->entityManager->getRepository(AuthToken::class)->verifyToken($request);
+            $user = $result['user'];
 
             if (!$comment) {
                 return $this->json(['message' => 'Comment not found'], Response::HTTP_NOT_FOUND);
             }
+            if ($comment->getAuthor() == $user || $user->isAdmin()) {
+                $this->entityManager->remove($comment);
+                $this->entityManager->flush();
 
-            $this->entityManager->remove($comment);
-            $this->entityManager->flush();
-
-            return $this->json(['message' => 'Comment deleted successfully']);
-
+                return $this->json(['message' => 'Comment deleted successfully']);
+            } else {
+                return $this->json(['message' => 'Unauthorized'], Response::HTTP_UNAUTHORIZED);
+            }
         } catch (\Exception $e) {
             return $this->json([
                 'message' => 'Error deleting comment: ' . $e->getMessage()
@@ -361,17 +409,33 @@ class CommentController extends AbstractController
             ]
         )
     )]
-    public function deleteAllComments(): JsonResponse
+    #[OA\Response(
+        response: 403,
+        description: 'Forbidden',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ],
+            type: 'object'
+        )
+    )]
+    public function deleteAllComments(Request $request): JsonResponse
     {
         try {
             $comments = $this->entityManager->getRepository(Comment::class)->findAll();
-            foreach($comments as $comment) {
-                $this->entityManager->remove($comment);
-            }
-            $this->entityManager->flush();
+            $result = $this->entityManager->getRepository(AuthToken::class)->verifyToken($request);
+            $user = $result['user'];
 
-            return $this->json(['message' => 'All comments successfully deleted']);
-            
+            if ($user->isAdmin()) {
+                foreach ($comments as $comment) {
+                    $this->entityManager->remove($comment);
+                }
+                $this->entityManager->flush();
+
+                return $this->json(['message' => 'All comments successfully deleted']);
+            } else {
+                return $this->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
+            }
         } catch (\Exception $e) {
             return $this->json(['message' => 'Error deleting comments: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
