@@ -4,6 +4,7 @@ namespace App\Repository;
 use App\Entity\AuthToken;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\Common\Collections\ArrayCollection;
 
 class AuthTokenRepository extends ServiceEntityRepository
 {
@@ -17,10 +18,10 @@ class AuthTokenRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('t')
             ->where('t.token = :token')
             ->andWhere('t.expiresAt > :now')
-            ->setParameters([
-                'token' => $token,
-                'now' => new \DateTime()
-            ])
+            ->setParameters(new ArrayCollection([
+                ['name' => 'token', 'value' => $token],
+                ['name' => 'now', 'value' => new \DateTime()]
+            ]))
             ->getQuery()
             ->getOneOrNullResult();
     }
