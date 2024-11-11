@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Attributes as OA;
+use PhpParser\Node\Stmt\TryCatch;
 
 #[Route('/api/comments')]
 #[OA\Tag(name: 'Comments')]
@@ -87,7 +88,7 @@ class CommentController extends AbstractController
     #[OA\Parameter(
         name: 'id',
         in: 'path',
-        description: 'Comment ID to retrieve',
+        description: 'Retrieve one comment by his ID',
         required: true,
         schema: new OA\Schema(type: 'integer'),
     )]
@@ -145,4 +146,234 @@ class CommentController extends AbstractController
         }
     }
 
+    // POST A COMMENT
+    #[Route('', methods: ['POST'])]
+    #[OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['title', 'content'],
+            properties: [
+                new OA\Property(property: 'title', type: 'string'),
+                new OA\Property(property: 'content', type: 'text'),
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 201,
+        description: 'Comment created successfully',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string'),
+                new OA\Property(
+                    property: 'data',
+                    properties: [
+                        new OA\Property(property: 'id', type: 'integer'),
+                        new OA\Property(property: 'title', type: 'string'),
+                        new OA\Property(property: 'content', type: 'text')
+                    ],
+                    type: 'object'
+                )
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 400,
+        description: 'Bad request - Missing required fields',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ]
+        )
+    )]
+    public function createComment(Request $request): JsonResponse
+    {
+        try {
+
+            $data = json_decode($request->getContent(), true);
+
+            $comment = new Comment();
+            $comment->setTitle($data['title']);
+            $comment->setContent($data['content']);
+
+            $this->entityManager->persist($comment);
+            $this->entityManager->flush();
+
+            return $this->json([
+                'message' => 'Comment created successfully',
+                'data' => [
+                    'id' => $comment->getId(),
+                    'title' => $comment->getTitle(),
+                    'content' => $comment->getContent()
+                ]
+                ], Response::HTTP_CREATED);
+        }
+        catch(\Exception $e) {
+            return $this->json([
+                'message' => 'Error creating comment: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // UPDATE A COMMENT
+    #[Route('/{id}', methods: ['PATCH'])]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        description: 'Comment ID to retrieve',
+        required: true,
+        schema: new OA\Schema(type: 'integer'),
+    )]
+    #[OA\RequestBody(
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'title', type: 'string'),
+                new OA\Property(property: 'content', type: 'text')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Comment updated successfully',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string'),
+                new OA\Property(property: 'data', type: 'object', 
+                properties: [
+                    new OA\Property(property: 'id', type: 'integer'),
+                    new OA\Property(property: 'title', type: 'string'),
+                    new OA\Property(property: 'content', type: 'text')
+                ])
+            ],
+            type: 'object'
+        )
+    )]
+    #[OA\Response(
+        response: 404,
+        description: 'Comment not found',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ]
+        )
+    )]
+    public function updateComment(Request $request, int $id): JsonResponse
+    {
+        try {
+            $comment = $this->entityManager->getRepository(Comment::class)->find($id);
+
+            if(!$comment) {
+                return $this->json(['message' => 'Comment not found'],
+                Response::HTTP_NOT_FOUND);
+            }
+
+            $data = json_decode($request->getContent(), true);
+
+            if (isset($data['title'])) {
+                $comment->setTitle($data['title']);
+            }
+            if (isset($data['content'])) {
+                $comment->setContent($data['content']);
+            }
+
+            $this->entityManager->flush();
+
+            return $this->json([
+                'message' => 'Comment successfully updated',
+                'data' => [
+                    'id' => $comment->getId(),
+                    'title' => $comment->getTitle(),
+                    'content' => $comment->getContent(),
+                ]
+            ]);
+        }
+        catch (\Exception $e){
+            return $this->json([
+                'message' => 'Error updating recipe: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // DELETE A COMMENT
+    #[Route('/{id}', methods: ['DELETE'])]
+    #[OA\Parameter(
+        name: 'id',
+        in: 'path',
+        required: true,
+        schema: new OA\Schema(type: 'integer')
+    )]
+    #[OA\Response(
+        response: 200,
+        description: 'Comment successfully deleted',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ],
+            type: 'object'
+        )
+    )]
+    #[OA\Response(
+        response: 404,
+        description: 'Comment not found',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ]
+        )
+    )]
+    public function deleteComment(int $id): JsonResponse
+    {
+        try {
+            $comment = $this->entityManager->getRepository(Comment::class)->find($id);
+
+            if (!$comment) {
+                return $this->json(['message' => 'Comment not found'], Response::HTTP_NOT_FOUND);
+            }
+
+            $this->entityManager->remove($comment);
+            $this->entityManager->flush();
+
+            return $this->json(['message' => 'Comment deleted successfully']);
+
+        } catch (\Exception $e) {
+            return $this->json([
+                'message' => 'Error deleting comment: ' . $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // DELETE ALL COMMENTS
+    #[Route('', methods: ['DELETE'])]
+    #[OA\Response(
+        response: 200,
+        description: 'All comments deleted successfully',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 500,
+        description: 'Internal server error',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ]
+        )
+    )]
+    public function deleteAllComments(): JsonResponse
+    {
+        try {
+            $comments = $this->entityManager->getRepository(Comment::class)->findAll();
+            foreach($comments as $comment) {
+                $this->entityManager->remove($comment);
+            }
+            $this->entityManager->flush();
+
+            return $this->json(['message' => 'All comments successfully deleted']);
+            
+        } catch (\Exception $e) {
+            return $this->json(['message' => 'Error deleting comments: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

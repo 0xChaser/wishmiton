@@ -284,6 +284,25 @@ class CategoryController extends AbstractController
         required: true,
         schema: new OA\Schema(type: 'integer')
     )]
+    #[OA\Response(
+        response: 200,
+        description: 'Category successfully deleted',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ],
+            type: 'object'
+        )
+    )]
+    #[OA\Response(
+        response: 404,
+        description: 'Category not found',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ]
+        )
+    )]
     public function deleteCategory(int $id): JsonResponse
     {
         try {
