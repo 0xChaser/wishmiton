@@ -37,13 +37,13 @@
 
 ## Back Manue
 
-- [ ] Endpoint Comment
-- [ ] GET / GET by Id
-- [ ] POST 
-- [ ] DELETE ALL / DELETE by Id
-- [ ] PATCH by Id
-- [ ] Utilisation d'ORM (Object Relational Mapping) -> https://symfony.com/doc/current/doctrine.html
-- [ ] CRUD complet pour Category avec name en clé primaire (actions par name et pas par Id)
+- [x] Endpoint Comment
+- [x] GET / GET by Id
+- [x] POST 
+- [x] DELETE ALL / DELETE by Id
+- [x] PATCH by Id
+- [x] Utilisation d'ORM (Object Relational Mapping) -> https://symfony.com/doc/current/doctrine.html
+- [x] CRUD complet pour Category avec name en clé primaire (actions par name et pas par Id) => impossible de mettre name en clef primaire...
 
 
 ## Back Adam
