@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\AuthToken;
 use App\Entity\Recipe;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -204,35 +205,52 @@ class RecipeController extends AbstractController {
             ]
         )
     )]
+    #[OA\Response(
+        response: 403,
+        description: 'Forbidden',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ],
+            type: 'object'
+        )
+    )]
     public function createRecipe(Request $request): JsonResponse
     {
         try {
             $data = json_decode($request->getContent(), true);
+            $user = $this->entityManager->getRepository(AuthToken::class)->getUserByToken($request);
             
+            if ($user) {
+                $recipe = new Recipe();
+                $recipe->setTitle($data['title']);
+                $recipe->setDescription($data['description']);
+                $recipe->setCategory($data['category']);
+                $recipe->setIngredients($data['ingredients']);
+                $recipe->setSteps($data['steps']);
+                $recipe->setLikeCount($data['likeCount'] ?? 0);
+                $recipe->setUser($user);
+    
+                $this->entityManager->persist($recipe);
+                $this->entityManager->flush();
+    
+                return $this->json([
+                    'message' => 'Recipe created successfully',
+                    'data' => [
+                        'id' => $recipe->getId(),
+                        'title' => $recipe->getTitle(),
+                        'description' => $recipe->getDescription(),
+                        'category' => $recipe->getCategory(),
+                        'ingredients' => $recipe->getIngredients(),
+                        'steps' => $recipe->getSteps(),
+                        'likeCount' => $recipe->getLikeCount()
+                    ]
+                ], Response::HTTP_CREATED);
+            }
 
-            $recipe = new Recipe();
-            $recipe->setTitle($data['title']);
-            $recipe->setDescription($data['description']);
-            $recipe->setCategory($data['category']);
-            $recipe->setIngredients($data['ingredients']);
-            $recipe->setSteps($data['steps']);
-            $recipe->setLikeCount($data['likeCount'] ?? 0);
-
-            $this->entityManager->persist($recipe);
-            $this->entityManager->flush();
-
-            return $this->json([
-                'message' => 'Recipe created successfully',
-                'data' => [
-                    'id' => $recipe->getId(),
-                    'title' => $recipe->getTitle(),
-                    'description' => $recipe->getDescription(),
-                    'category' => $recipe->getCategory(),
-                    'ingredients' => $recipe->getIngredients(),
-                    'steps' => $recipe->getSteps(),
-                    'likeCount' => $recipe->getLikeCount()
-                ]
-            ], Response::HTTP_CREATED);
+            else {
+                return $this->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
+            }
 
         } catch (\Exception $e) {
             return $this->json([
@@ -289,50 +307,66 @@ class RecipeController extends AbstractController {
             ]
         )
     )]
+    #[OA\Response(
+        response: 403,
+        description: 'Forbidden',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ],
+            type: 'object'
+        )
+    )]
     public function updateRecipe(Request $request, int $id): JsonResponse
     {
         try {
             $recipe = $this->entityManager->getRepository(Recipe::class)->find($id);
+            $user = $this->entityManager->getRepository(AuthToken::class)->getUserByToken($request);
     
             if (!$recipe) {
                 return $this->json(['message' => 'Recipe not found'], Response::HTTP_NOT_FOUND);
             }
     
-            $data = json_decode($request->getContent(), true);
-    
-            if (isset($data['title'])) {
-                $recipe->setTitle($data['title']);
+            if ($recipe->getUser() == $user || $user->isAdmin()) {
+                $data = json_decode($request->getContent(), true);
+        
+                if (isset($data['title'])) {
+                    $recipe->setTitle($data['title']);
+                }
+                if (isset($data['description'])) {
+                    $recipe->setDescription($data['description']);
+                }
+                if (isset($data['category'])) {
+                    $recipe->setCategory($data['category']);
+                }
+                if (isset($data['ingredients'])) {
+                    $recipe->setIngredients($data['ingredients']);
+                }
+                if (isset($data['steps'])) {
+                    $recipe->setSteps($data['steps']);
+                }
+                if (isset($data['likeCount'])) {
+                    $recipe->setLikeCount($data['likeCount']);
+                }
+        
+                $this->entityManager->flush();
+        
+                return $this->json([
+                    'message' => 'Recipe updated successfully',
+                    'data' => [
+                        'id' => $recipe->getId(),
+                        'title' => $recipe->getTitle(),
+                        'description' => $recipe->getDescription(),
+                        'category' => $recipe->getCategory(),
+                        'ingredients' => $recipe->getIngredients(),
+                        'steps' => $recipe->getSteps(),
+                        'likeCount' => $recipe->getLikeCount()
+                    ]
+                ]);
             }
-            if (isset($data['description'])) {
-                $recipe->setDescription($data['description']);
+            else {
+                return $this->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
             }
-            if (isset($data['category'])) {
-                $recipe->setCategory($data['category']);
-            }
-            if (isset($data['ingredients'])) {
-                $recipe->setIngredients($data['ingredients']);
-            }
-            if (isset($data['steps'])) {
-                $recipe->setSteps($data['steps']);
-            }
-            if (isset($data['likeCount'])) {
-                $recipe->setLikeCount($data['likeCount']);
-            }
-    
-            $this->entityManager->flush();
-    
-            return $this->json([
-                'message' => 'Recipe updated successfully',
-                'data' => [
-                    'id' => $recipe->getId(),
-                    'title' => $recipe->getTitle(),
-                    'description' => $recipe->getDescription(),
-                    'category' => $recipe->getCategory(),
-                    'ingredients' => $recipe->getIngredients(),
-                    'steps' => $recipe->getSteps(),
-                    'likeCount' => $recipe->getLikeCount()
-                ]
-            ]);
     
         } catch (\Exception $e) {
             return $this->json([
@@ -348,19 +382,43 @@ class RecipeController extends AbstractController {
         required: true,
         schema: new OA\Schema(type: 'integer')
     )]
-    public function deleteRecipe(int $id): JsonResponse
+    #[OA\Response(
+        response: 404,
+        description: 'Recipe not found',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ]
+        )
+    )]
+    #[OA\Response(
+        response: 403,
+        description: 'Forbidden',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ],
+            type: 'object'
+        )
+    )]
+    public function deleteRecipe(int $id, Request $request): JsonResponse
     {
         try {
             $recipe = $this->entityManager->getRepository(Recipe::class)->find($id);
+            $user = $this->entityManager->getRepository(AuthToken::class)->getUserByToken($request);
 
             if (!$recipe) {
                 return $this->json(['message' => 'Recipe not found'], Response::HTTP_NOT_FOUND);
             }
-
-            $this->entityManager->remove($recipe);
-            $this->entityManager->flush();
-
-            return $this->json(['message' => 'Recipe deleted successfully']);
+            if ($recipe->getUser() == $user || $user->isAdmin()) {
+                $this->entityManager->remove($recipe);
+                $this->entityManager->flush();
+    
+                return $this->json(['message' => 'Recipe deleted successfully']);
+            }
+            else {
+                return $this->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
+            }
 
         } catch (\Exception $e) {
             return $this->json([
@@ -389,16 +447,33 @@ class RecipeController extends AbstractController {
             ]
         )
     )]
-    public function deleteAllRecipes(): JsonResponse
+    #[OA\Response(
+        response: 403,
+        description: 'Forbidden',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ],
+            type: 'object'
+        )
+    )]
+    public function deleteAllRecipes(Request $request): JsonResponse
     {
         try {
             $recipes = $this->entityManager->getRepository(Recipe::class)->findAll();
-            foreach ($recipes as $recipe) {
-                $this->entityManager->remove($recipe);
-            }
-            $this->entityManager->flush();
+            $user = $this->entityManager->getRepository(AuthToken::class)->getUserByToken($request);
 
-            return $this->json(['message' => 'All recipes deleted successfully']);
+            if ($user->isAdmin()) {
+                foreach ($recipes as $recipe) {
+                    $this->entityManager->remove($recipe);
+                }
+                $this->entityManager->flush();
+    
+                return $this->json(['message' => 'All recipes deleted successfully']);
+            }
+            else {
+                return $this->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
+            }
         } catch (\Exception $e) {
             return $this->json([
                 'message' => 'Error deleting recipes: ' . $e->getMessage()
