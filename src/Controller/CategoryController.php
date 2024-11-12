@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\AuthToken;
 use App\Entity\Category;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -178,25 +179,41 @@ class CategoryController extends AbstractController
             ]
         )
     )]
+    #[OA\Response(
+        response: 403,
+        description: 'Forbidden',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ],
+            type: 'object'
+        )
+    )]
     public function createCategory(Request $request): JsonResponse
     {
         try {
             $data = json_decode($request->getContent(), true);
-            
+            $user = $this->entityManager->getRepository(AuthToken::class)->getUserByToken($request);
 
-            $category = new Category();
-            $category->setName($data['name']);
+            if ($user->isAdmin()) {
+                $category = new Category();
+                $category->setName($data['name']);
+    
+                $this->entityManager->persist($category);
+                $this->entityManager->flush();
+    
+                return $this->json([
+                    'message' => 'category created successfully',
+                    'data' => [
+                        'id' => $category->getId(),
+                        'name' => $category->getName(),
+                    ]
+                ], Response::HTTP_CREATED);
+            }
 
-            $this->entityManager->persist($category);
-            $this->entityManager->flush();
-
-            return $this->json([
-                'message' => 'category created successfully',
-                'data' => [
-                    'id' => $category->getId(),
-                    'name' => $category->getName(),
-                ]
-            ], Response::HTTP_CREATED);
+            else {
+                return $this->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
+            }
 
         } catch (\Exception $e) {
             return $this->json([
@@ -244,30 +261,46 @@ class CategoryController extends AbstractController
             ]
         )
     )]
+    #[OA\Response(
+        response: 403,
+        description: 'Forbidden',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ],
+            type: 'object'
+        )
+    )]
     public function updateCategory(Request $request, int $id): JsonResponse
     {
         try {
             $category = $this->entityManager->getRepository(Category::class)->find($id);
+            $user = $this->entityManager->getRepository(AuthToken::class)->getUserByToken($request);
     
             if (!$category) {
                 return $this->json(['message' => 'category not found'], Response::HTTP_NOT_FOUND);
             }
     
-            $data = json_decode($request->getContent(), true);
-    
-            if (isset($data['name'])) {
-                $category->setName($data['name']);
+            if ($user->isAdmin()) {
+                $data = json_decode($request->getContent(), true);
+        
+                if (isset($data['name'])) {
+                    $category->setName($data['name']);
+                }
+        
+                $this->entityManager->flush();
+        
+                return $this->json([
+                    'message' => 'category updated successfully',
+                    'data' => [
+                        'id' => $category->getId(),
+                        'name' => $category->getName(),
+                    ]
+                ]);
             }
-    
-            $this->entityManager->flush();
-    
-            return $this->json([
-                'message' => 'category updated successfully',
-                'data' => [
-                    'id' => $category->getId(),
-                    'name' => $category->getName(),
-                ]
-            ]);
+            else {
+                return $this->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
+            }
     
         } catch (\Exception $e) {
             return $this->json([
@@ -303,19 +336,35 @@ class CategoryController extends AbstractController
             ]
         )
     )]
-    public function deleteCategory(int $id): JsonResponse
+    #[OA\Response(
+        response: 403,
+        description: 'Forbidden',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ],
+            type: 'object'
+        )
+    )]
+    public function deleteCategory(int $id, Request $request): JsonResponse
     {
         try {
             $category = $this->entityManager->getRepository(Category::class)->find($id);
+            $user = $this->entityManager->getRepository(AuthToken::class)->getUserByToken($request);
 
             if (!$category) {
                 return $this->json(['message' => 'category not found'], Response::HTTP_NOT_FOUND);
             }
 
-            $this->entityManager->remove($category);
-            $this->entityManager->flush();
-
-            return $this->json(['message' => 'category deleted successfully']);
+            if ($user->isAdmin()) {
+                $this->entityManager->remove($category);
+                $this->entityManager->flush();
+    
+                return $this->json(['message' => 'category deleted successfully']);
+            }
+            else {
+                return $this->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
+            }
 
         } catch (\Exception $e) {
             return $this->json([
@@ -337,6 +386,16 @@ class CategoryController extends AbstractController
         )
     )]
     #[OA\Response(
+        response: 403,
+        description: 'Forbidden',
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'message', type: 'string')
+            ],
+            type: 'object'
+        )
+    )]
+    #[OA\Response(
         response: 500,
         description: 'Internal server error',
         content: new OA\JsonContent(
@@ -345,16 +404,22 @@ class CategoryController extends AbstractController
             ]
         )
     )]
-    public function deleteAllCategories(): JsonResponse
+    public function deleteAllCategories(Request $request): JsonResponse
     {
         try {
             $categories = $this->entityManager->getRepository(Category::class)->findAll();
-            foreach ($categories as $category) {
-                $this->entityManager->remove($category);
+            $user = $this->entityManager->getRepository(AuthToken::class)->getUserByToken($request);
+            if ($user->isAdmin()) {
+                foreach ($categories as $category) {
+                    $this->entityManager->remove($category);
+                }
+                $this->entityManager->flush();
+    
+                return $this->json(['message' => 'All categories deleted successfully']);
             }
-            $this->entityManager->flush();
-
-            return $this->json(['message' => 'All categories deleted successfully']);
+            else {
+                return $this->json(['message' => 'Forbidden'], Response::HTTP_FORBIDDEN);
+            }
         } catch (\Exception $e) {
             return $this->json([
                 'message' => 'Error deleting categories: ' . $e->getMessage()

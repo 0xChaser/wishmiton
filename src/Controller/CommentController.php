@@ -11,7 +11,6 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Attributes as OA;
-use PhpParser\Node\Stmt\TryCatch;
 
 #[Route('/api/comment')]
 #[OA\Tag(name: 'Comment')]
@@ -202,8 +201,7 @@ class CommentController extends AbstractController
         try {
 
             $data = json_decode($request->getContent(), true);
-            $result = $this->entityManager->getRepository(AuthToken::class)->findValidToken($request);
-            $user = $result->getUser();
+            $user = $this->entityManager->getRepository(AuthToken::class)->getUserByToken($request);
 
             $comment = new Comment();
             $comment->setTitle($data['title']);
@@ -287,8 +285,7 @@ class CommentController extends AbstractController
     {
         try {
             $comment = $this->entityManager->getRepository(Comment::class)->find($id);
-            $result = $this->entityManager->getRepository(AuthToken::class)->findValidToken($request);
-            $user = $result->getUser();
+            $user = $this->entityManager->getRepository(AuthToken::class)->getUserByToken($request);
 
             if (!$comment) {
                 return $this->json(
@@ -368,8 +365,7 @@ class CommentController extends AbstractController
     {
         try {
             $comment = $this->entityManager->getRepository(Comment::class)->find($id);
-            $result = $this->entityManager->getRepository(AuthToken::class)->findValidToken($request);
-            $user = $result->getUser();
+            $user = $this->entityManager->getRepository(AuthToken::class)->getUserByToken($request);
 
             if (!$comment) {
                 return $this->json(['message' => 'Comment not found'], Response::HTTP_NOT_FOUND);
@@ -423,8 +419,7 @@ class CommentController extends AbstractController
     {
         try {
             $comments = $this->entityManager->getRepository(Comment::class)->findAll();
-            $result = $this->entityManager->getRepository(AuthToken::class)->findValidToken($request);
-            $user = $result->getUser();
+            $user = $this->entityManager->getRepository(AuthToken::class)->getUserByToken($request);
 
             if ($user->isAdmin()) {
                 foreach ($comments as $comment) {

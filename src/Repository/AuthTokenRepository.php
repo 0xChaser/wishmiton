@@ -1,10 +1,12 @@
 <?php
+
 namespace App\Repository;
 
 use App\Entity\AuthToken;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use Doctrine\Common\Collections\ArrayCollection;
+use Symfony\Component\HttpFoundation\Request;
 
 class AuthTokenRepository extends ServiceEntityRepository
 {
@@ -18,10 +20,8 @@ class AuthTokenRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('t')
             ->where('t.token = :token')
             ->andWhere('t.expiresAt > :now')
-            ->setParameters(new ArrayCollection([
-                ['name' => 'token', 'value' => $token],
-                ['name' => 'now', 'value' => new \DateTime()]
-            ]))
+            ->setParameter('token', $token)
+            ->setParameter('now', new \DateTime())
             ->getQuery()
             ->getOneOrNullResult();
     }
@@ -48,5 +48,13 @@ class AuthTokenRepository extends ServiceEntityRepository
         $em = $this->getEntityManager();
         $em->remove($token);
         $em->flush();
+    }
+
+    public function getUserByToken(Request $request) : User
+    {
+        $token = explode(' ',$request->headers->get('Authorization'))[1];
+        $result = $this->findValidToken($token);
+        $user = $result->getUser();
+        return $user;
     }
 }
