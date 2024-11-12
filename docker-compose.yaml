@@ -1,37 +1,14 @@
-services:
-  wishmiton:
-    container_name: wishmiton
-    build:
-      context: .
-      target: base
-      dockerfile: Dockerfile
-    ports:
-      - 80:8000
-    volumes:
-      - .:/app/wishmiton
-    environment:
-      SERVER_NAME: ${SERVER_NAME:-localhost}, wishmitin:8000
-      APP_ENV: dev
-      MYSQL_HOST: "${MYSQL_HOST}"
-      DATABASE_URL: "${DATABASE_URL}"
-      MYSQL_PORT: "${MYSQL_PORT}"
-      MYSQL_USER: "${MYSQL_USER}"
-      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
-    depends_on:
-      - mariadb
-    env_file:
-      - path: .env
-        required: true
-    networks:
-      - "app_network"
+version: '3.8'
 
+services:
   mariadb:
-    hostname: mariadb
-    container_name: mariadb
-    image: mariadb:10.11
+    container_name: "mariadb_service"
+    image: mariadb:latest
     restart: always
     volumes:
       - mariadb_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
       MYSQL_DATABASE: "${MYSQL_DATABASE}"
@@ -40,26 +17,25 @@ services:
     env_file:
       - .env
     networks:
-      - "app_network"
+      - "mariadb_network"
 
   phpmyadmin:
     container_name: "phpmyadmin_service"
     image: phpmyadmin/phpmyadmin:latest
     environment:
-      PMA_HOST: "${MYSQL_HOST}"
+      PMA_HOST: mariadb
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD}"
     ports:
       - "8080:80"
     depends_on:
       - mariadb 
     restart: always
-    env_file:
-      - .env
     networks:
-      - "app_network"
+      - "mariadb_network"
 
 volumes:
   mariadb_data:
 
 networks:
-  app_network:
+  mariadb_network:
+    driver: bridge
