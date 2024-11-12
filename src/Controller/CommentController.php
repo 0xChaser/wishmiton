@@ -13,8 +13,8 @@ use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Attributes as OA;
 use PhpParser\Node\Stmt\TryCatch;
 
-#[Route('/api/comments')]
-#[OA\Tag(name: 'Comments')]
+#[Route('/api/comment')]
+#[OA\Tag(name: 'Comment')]
 class CommentController extends AbstractController
 {
     private EntityManagerInterface $entityManager;
@@ -40,7 +40,7 @@ class CommentController extends AbstractController
                         properties: [
                             new OA\Property(property: 'id', type: 'integer'),
                             new OA\Property(property: 'title', type: 'string'),
-                            new OA\Property(property: 'content', type: 'string'),
+                            new OA\Property(property: 'content', type: 'text'),
                         ]
                     )
                 )
@@ -100,7 +100,7 @@ class CommentController extends AbstractController
             properties: [
                 new OA\Property(property: 'id', type: 'integer'),
                 new OA\Property(property: 'title', type: 'string'),
-                new OA\Property(property: 'content', type: 'string'),
+                new OA\Property(property: 'content', type: 'text'),
             ]
         )
     )]

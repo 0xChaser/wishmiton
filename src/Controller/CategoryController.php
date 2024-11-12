@@ -11,8 +11,8 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Attributes as OA;
 
-#[Route('/api/categories')]
-#[OA\Tag(name: 'Categories')]
+#[Route('/api/category')]
+#[OA\Tag(name: 'Category')]
 class CategoryController extends AbstractController
 {
     private EntityManagerInterface $entityManager;
