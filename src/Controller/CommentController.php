@@ -202,8 +202,8 @@ class CommentController extends AbstractController
         try {
 
             $data = json_decode($request->getContent(), true);
-            $result = $this->entityManager->getRepository(AuthToken::class)->verifyToken($request);
-            $user = $result['user'];
+            $result = $this->entityManager->getRepository(AuthToken::class)->findValidToken($request);
+            $user = $result->getUser();
 
             $comment = new Comment();
             $comment->setTitle($data['title']);
@@ -287,8 +287,8 @@ class CommentController extends AbstractController
     {
         try {
             $comment = $this->entityManager->getRepository(Comment::class)->find($id);
-            $result = $this->entityManager->getRepository(AuthToken::class)->verifyToken($request);
-            $user = $result['user'];
+            $result = $this->entityManager->getRepository(AuthToken::class)->findValidToken($request);
+            $user = $result->getUser();
 
             if (!$comment) {
                 return $this->json(
@@ -368,8 +368,8 @@ class CommentController extends AbstractController
     {
         try {
             $comment = $this->entityManager->getRepository(Comment::class)->find($id);
-            $result = $this->entityManager->getRepository(AuthToken::class)->verifyToken($request);
-            $user = $result['user'];
+            $result = $this->entityManager->getRepository(AuthToken::class)->findValidToken($request);
+            $user = $result->getUser();
 
             if (!$comment) {
                 return $this->json(['message' => 'Comment not found'], Response::HTTP_NOT_FOUND);
@@ -423,8 +423,8 @@ class CommentController extends AbstractController
     {
         try {
             $comments = $this->entityManager->getRepository(Comment::class)->findAll();
-            $result = $this->entityManager->getRepository(AuthToken::class)->verifyToken($request);
-            $user = $result['user'];
+            $result = $this->entityManager->getRepository(AuthToken::class)->findValidToken($request);
+            $user = $result->getUser();
 
             if ($user->isAdmin()) {
                 foreach ($comments as $comment) {
