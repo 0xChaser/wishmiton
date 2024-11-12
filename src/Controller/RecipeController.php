@@ -11,8 +11,8 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use OpenApi\Attributes as OA;
 
-#[Route('/api/recipes')]
-#[OA\Tag(name: 'Recipes')]
+#[Route('/api/recipe')]
+#[OA\Tag(name: 'Recipe')]
 class RecipeController extends AbstractController {
     private EntityManagerInterface $entityManager;
 

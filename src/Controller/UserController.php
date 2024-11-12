@@ -12,8 +12,8 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use OpenApi\Attributes as OA;
 
-#[Route('/api/users')]
-#[OA\Tag(name: 'Users')]
+#[Route('/api/user')]
+#[OA\Tag(name: 'User')]
 class UserController extends AbstractController
 {
     private EntityManagerInterface $entityManager;
