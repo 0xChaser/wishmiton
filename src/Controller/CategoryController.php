@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\AuthToken;
 use App\Entity\Category;
+use App\Form\CategoryType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -197,10 +198,16 @@ class CategoryController extends AbstractController
 
             if ($user->isAdmin()) {
                 $category = new Category();
-                $category->setName($data['name']);
-    
-                $this->entityManager->persist($category);
-                $this->entityManager->flush();
+                $form = $this->createForm(CategoryType::class, $category);
+                $form->handleRequest($request);
+
+                if ($form->isSubmitted() && $form->isValid())
+                {
+                    $category->setName($data['name']);
+                    $this->entityManager->persist($category);
+                    $this->entityManager->flush();
+
+                }
     
                 return $this->json([
                     'message' => 'category created successfully',
@@ -209,6 +216,10 @@ class CategoryController extends AbstractController
                         'name' => $category->getName(),
                     ]
                 ], Response::HTTP_CREATED);
+
+                return $this->render('/templates/category/new.html.twig', [
+                    'form' => $form->createView(),
+                ]);
             }
 
             else {

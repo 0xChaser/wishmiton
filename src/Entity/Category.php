@@ -16,14 +16,6 @@ class Category
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    // constructeur
-
-    // public function __construct(?int $id, ?string $name)
-    // {
-    //     $this->id = $id;
-    //     $this->name = $name;
-    // }
-
     // Getters et setters
 
     public function getId(): ?int
