@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="my-recipes">
+        <h1>Mes recettes</h1>
+        
+        <a href="{{ path('recipe_new') }}" class="btn-create">Créer une nouvelle recette</a>
+
+        <div class="recipe-grid">
+            {% for recipe in recipes %}
+                <div class="recipe-card">
+                    <img src="{{ asset('images/recipes/' ~ recipe.image|default('default.jpg')) }}" alt="{{ recipe.title }}">
+                    <div class="recipe-info">
+                        <h3>{{ recipe.title }}</h3>
+                        <p>{{ recipe.description|slice(0, 100) }}...</p>
+                        <div class="recipe-actions">
+                            <a href="{{ path('recipe_show', {id: recipe.id}) }}" class="btn-view">Voir</a>
+                            <a href="{{ path('recipe_edit', {id: recipe.id}) }}" class="btn-edit">Modifier</a>
+                            <button class="btn-delete" data-id="{{ recipe.id }}">Supprimer</button>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <p class="no-recipes">Vous n'avez pas encore créé de recettes.</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

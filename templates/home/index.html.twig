@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <section class="recipe-categories">
+        <div class="category-grid">
+            {% for category in categories %}
+                <div class="category-item">
+                    <img src="{{ asset('images/categories/' ~ category.image) }}" alt="{{ category.name }}">
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="featured-recipes">
+        <h2 class="section-title">Les recettes à la une</h2>
+        <div class="recipe-carousel">
+            {% for recipe in featuredRecipes %}
+                <div class="recipe-card featured">
+                    <img src="{{ recipe.image }}" alt="{{ recipe.title }}">
+                    <h3>{{ recipe.title }}</h3>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="all-recipes">
+        <h2 class="section-title">Toutes les recettes</h2>
+        <div class="recipe-grid">
+            {% for recipe in recipes %}
+                <div class="recipe-card">
+                    <img src="{{ recipe.image }}" alt="{{ recipe.title }}">
+                    <div class="recipe-info">
+                        <h3>{{ recipe.title }}</h3>
+                        <div class="recipe-actions">
+                            <button class="btn-like" data-id="{{ recipe.id }}">
+                                <i class="fas fa-heart"></i>
+                                <span>{{ recipe.likeCount }}</span>
+                            </button>
+                            <button class="btn-share" data-id="{{ recipe.id }}">
+                                <i class="fas fa-share"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+{% endblock %}
