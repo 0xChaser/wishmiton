@@ -41,6 +41,7 @@ class RecipeController extends AbstractController {
                             new OA\Property(property: 'ingredients', type: 'array', items: new OA\Items(type: 'string')),
                             new OA\Property(property: 'steps', type: 'array', items: new OA\Items(type: 'string')),
                             new OA\Property(property: 'likeCount', type: 'integer'),
+                            new OA\Property(property: 'image', type: 'string', format:'binary'),
                         ]
                     )
                 )
@@ -108,6 +109,7 @@ class RecipeController extends AbstractController {
                 new OA\Property(property: 'ingredients', type: 'array', items: new OA\Items(type: 'string')),
                 new OA\Property(property: 'steps', type: 'array', items: new OA\Items(type: 'string')),
                 new OA\Property(property: 'likeCount', type: 'integer'),
+                new OA\Property(property: 'image', type: 'string', format:'binary'),
             ]
         )   
     )]
@@ -148,6 +150,7 @@ class RecipeController extends AbstractController {
                 'ingredients' => $recipe->getIngredients(),
                 'steps' => $recipe->getSteps(),
                 'likeCount' => $recipe->getLikeCount(),
+                'image' => $imageData ? 'data:image/png;base64, ' . $imageData : null,
             ];
 
             return $this->json($data, Response::HTTP_OK);
@@ -169,7 +172,8 @@ class RecipeController extends AbstractController {
                 new OA\Property(property: 'category', type: 'string'),
                 new OA\Property(property: 'ingredients', type: 'array', items: new OA\Items(type: 'string')),
                 new OA\Property(property: 'steps', type: 'array', items: new OA\Items(type: 'string')),
-                new OA\Property(property: 'likeCount', type: 'integer', example: 0)
+                new OA\Property(property: 'likeCount', type: 'integer', example: 0),
+                new OA\Property(property: 'image', type: 'string', format:'binary'),
             ]
         )
     )]
@@ -188,7 +192,8 @@ class RecipeController extends AbstractController {
                         new OA\Property(property: 'category', type: 'string'),
                         new OA\Property(property: 'ingredients', type: 'array', items: new OA\Items(type: 'string')),
                         new OA\Property(property: 'steps', type: 'array', items: new OA\Items(type: 'string')),
-                        new OA\Property(property: 'likeCount', type: 'integer', example: 0)
+                        new OA\Property(property: 'likeCount', type: 'integer', example: 0),
+                        new OA\Property(property: 'image', type: 'string', format:'binary'),
                     ],
                     type: 'object'
                 )
@@ -230,6 +235,39 @@ class RecipeController extends AbstractController {
                 $recipe->setSteps($data['steps']);
                 $recipe->setLikeCount($data['likeCount'] ?? 0);
                 $recipe->setUser($user);
+
+
+                if(isset($data['image'])){
+                    if(preg_match('/^data:image\/(\w+);base64,/', $data['image'], $type)){
+                        $imageData = substr($data['image'], strpos($data['image'], ',') + 1);
+                        $imageType = strtolower($type[1]);
+
+                        if(!in_array($imageType,['png'])){
+                            throw new \Exception('Image invalide, format attendu : png');
+                        }
+
+                        $decodedImage = base64_decode($imageData);
+                        if ($decodedImage === false){
+                            throw new \Exception("Erreur lors de la décodification de l'image");
+                        }
+
+                        $img = fopen('php://temp', 'r+');
+                        fwrite($img, $decodedImage);
+                        rewind($img);
+
+                        $recipe->setImageRecipe($img);
+                    }
+                }
+
+                $imageData = null;
+                if($recipe->getImageRecipe()){
+                    $imageStream = $recipe->getImageRecipe();
+                    $imageContent = stream_get_contents($imageStream);
+                    $imageData = base64_encode($imageContent);
+                }
+
+
+
     
                 $this->entityManager->persist($recipe);
                 $this->entityManager->flush();
@@ -243,7 +281,9 @@ class RecipeController extends AbstractController {
                         'category' => $recipe->getCategory(),
                         'ingredients' => $recipe->getIngredients(),
                         'steps' => $recipe->getSteps(),
-                        'likeCount' => $recipe->getLikeCount()
+                        'likeCount' => $recipe->getLikeCount(),
+                        'image' => $imageData ? 'data:image/png;base64, ' . $imageData : null,
+
                     ]
                 ], Response::HTTP_CREATED);
             }
@@ -275,7 +315,8 @@ class RecipeController extends AbstractController {
                 new OA\Property(property: 'category', type: 'string'),
                 new OA\Property(property: 'ingredients', type: 'array', items: new OA\Items(type: 'string')),
                 new OA\Property(property: 'steps', type: 'array', items: new OA\Items(type: 'string')),
-                new OA\Property(property: 'likeCount', type: 'integer')
+                new OA\Property(property: 'likeCount', type: 'integer'),
+                new OA\Property(property: 'image', type: 'string', format:'binary'),
             ]
         )
     )]
@@ -292,7 +333,9 @@ class RecipeController extends AbstractController {
                     new OA\Property(property: 'category', type: 'string'),
                     new OA\Property(property: 'ingredients', type: 'array', items: new OA\Items(type: 'string')),
                     new OA\Property(property: 'steps', type: 'array', items: new OA\Items(type: 'string')),
-                    new OA\Property(property: 'likeCount', type: 'integer')
+                    new OA\Property(property: 'likeCount', type: 'integer'),
+                    new OA\Property(property: 'image', type: 'string', format:'binary'),
+
                 ])
             ],
             type: 'object'
@@ -360,7 +403,8 @@ class RecipeController extends AbstractController {
                         'category' => $recipe->getCategory(),
                         'ingredients' => $recipe->getIngredients(),
                         'steps' => $recipe->getSteps(),
-                        'likeCount' => $recipe->getLikeCount()
+                        'likeCount' => $recipe->getLikeCount(),
+                        'image' => $imageData ? 'data:image/png;base64, ' . $imageData : null,
                     ]
                 ]);
             }
